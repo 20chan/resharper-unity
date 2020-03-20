@@ -1,4 +1,5 @@
 using JetBrains.ReSharper.Plugins.Unity.Yaml.Psi.DeferredCaches.AssetHierarchy.Elements;
+using JetBrains.ReSharper.Plugins.Unity.Yaml.Psi.DeferredCaches.AssetHierarchy.References;
 using JetBrains.ReSharper.Plugins.Unity.Yaml.Psi.DeferredCaches.AssetInspectorValues;
 using JetBrains.ReSharper.Psi;
 using JetBrains.ReSharper.Psi.Pointers;
@@ -11,32 +12,12 @@ namespace JetBrains.ReSharper.Plugins.Unity.Yaml.Feature.Services.Navigation
         public InspectorVariableUsage InspectorVariableUsage { get; }
 
         public UnityInspectorValuesOccurrence(IPsiSourceFile sourceFile, InspectorVariableUsage inspectorVariableUsage,
-            IDeclaredElementPointer<IDeclaredElement> declaredElement, IHierarchyElement attachedElement)
-            : base(sourceFile, declaredElement, attachedElement)
+            IDeclaredElementPointer<IDeclaredElement> declaredElement, IHierarchyElement attachedElement, LocalReference attachedElementLocation)
+            : base(sourceFile, declaredElement, attachedElement, attachedElementLocation)
         {
             InspectorVariableUsage = inspectorVariableUsage;
         }
 
-        protected bool Equals(UnityInspectorValuesOccurrence other)
-        {
-            return base.Equals(other) && InspectorVariableUsage.Equals(other.InspectorVariableUsage);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((UnityInspectorValuesOccurrence) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                return (base.GetHashCode() * 397) ^ InspectorVariableUsage.GetHashCode();
-            }
-        }
 
         public override string ToString()
         {
@@ -44,8 +25,11 @@ namespace JetBrains.ReSharper.Plugins.Unity.Yaml.Feature.Services.Navigation
             {
                 using (CompilationContextCookie.GetExplicitUniversalContextIfNotSet())
                 {
-                    var value = InspectorVariableUsage.Value.GetPresentation(GetSolution(), DeclaredElementPointer.FindDeclaredElement(), true);
-                    return $"{InspectorVariableUsage.Name} = {value}";
+                    var de = DeclaredElementPointer.FindDeclaredElement();
+                    if (de == null)
+                        return "INVALID";
+                    var value = InspectorVariableUsage.Value.GetPresentation(GetSolution(), de, true);
+                    return $"{de.ShortName} = {value}";
                 }
             }
         }
